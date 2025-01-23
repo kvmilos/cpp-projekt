@@ -34,11 +34,11 @@ liter alfabetu angielskiego, dla innych może, ale nie musi.
  - Operatory dwuargumentowe:
     - Sklejania napisów (&). W wyniku najpierw jest pierwszy, potem drugi argument.
  Np. "C" & "++" daje wynik "C++".
-    - Maskowania (*). Wynikiem jest napis zawierający te znaki z pierwszego argumentu, 
-którym odpowiada znak '*' w drugim argumencie. Jeśli drugi argument jest krótszy niż 
+    - Maskowania (\*). Wynikiem jest napis zawierający te znaki z pierwszego argumentu, 
+którym odpowiada znak '\*' w drugim argumencie. Jeśli drugi argument jest krótszy niż 
 pierwszy, to drugi argument jest powtarzany odpowiednio wiele razy. Jeśli drugi 
 argument jest pusty, to wynikiem jest pusty napis.
- Np. "Basic" * ".*" daje wynik "ai".
+ Np. "Basic" \* ".\*" daje wynik "ai".
     - Przeplotu (@): ustawia na przemian znaki z pierwszego i drugiego napisu, na końcu 
 dokleja ogon dłuższego napisu. Pierwszy znak pochodzi z pierwszego napisu (o ile nie 
 jest on pusty).
@@ -49,7 +49,7 @@ jest on pusty).
  Takie przyporządkowanie zmiennym ich wartości nazywamy wartościowaniem. W tym programie
  chcemy móc zadawać wartości zmiennych (p. przykład) oraz chcemy wykrywać (sygnalizować
  zgłaszanymi wyjątkami) niepoprawne odwołania do zmiennych. Niepoprawne odwołanie do
- zmiennej może wynikać z tego, że podano niedozwoloną nazwę (np. '8', '*' lub 'A'), albo z tego, że
+ zmiennej może wynikać z tego, że podano niedozwoloną nazwę (np. '8', '\*' lub 'A'), albo z tego, że
  próbujemy odczytać wartość zmiennej, której wartości nie określono (czyli nie zakładamy, że
  wszystkie zmienne są początkowo zainicjowane). Zadbaj w swoim programie, by prawidłowo
  rozpoznawać i zgłaszać te sytuacje za pomocą wyjątków.
@@ -67,7 +67,7 @@ który jest wyższy od (jednego wspólnego) priorytetu operatorów
  (jakim wyrażeniem w C++ można policzyć tę liczbę?) i o wartościach będących napisami.
  Jakim wyrażeniem w C++ przejść od nazwy zmiennej (np. 'a') do odpowiadającego jej
  indeksu w tablicy (np. 0)? Wskazówka: typ char jest w C++ typem liczbowym, więc
- pozwala na wykonywanie operacji takich jak +, -, *, /, itp., może któraś z nich się tu przyda?
+ pozwala na wykonywanie operacji takich jak +, -, \*, /, itp., może któraś z nich się tu przyda?
  - Można zdefiniować dodatkowe klasy lub metody.
  - Można korzystać z biblioteki standardowej (ale żadne klasy spoza omawianych na
  wykładzie nie są tu konieczne).
