@@ -1,18 +1,17 @@
 #include <iostream>
 #include <string>
-#include <windows.h>
 
 
 using namespace std;
 
 class ZlaNazwaZmiennej : public exception {
 public:
-    const char* what() const override { return "Niepoprawna nazwa zmiennej"; }
+    const char* what() const noexcept override { return "Niepoprawna nazwa zmiennej"; }
 };
 
 class BrakWartosciZmiennej : public exception {
 public:
-    const char* what() const override { return "Brak wartosci dla zmiennej"; }
+    const char* what() const noexcept override { return "Brak wartosci dla zmiennej"; }
 };
 
 class Wyrazenie {
@@ -32,7 +31,7 @@ class Stala : public Wyrazenie {
     private:
         string tekst;
     public:
-        Stala(string t) : Wyrazenie(3), tekst(t) {}
+        explicit Stala(string t) : Wyrazenie(3), tekst(t) {}
         string wylicz() override {return  tekst;}
         string wylicz(string[26]) override {return tekst;}
         void wypisz() override {cout << "\"" << tekst << "\"";}
@@ -43,7 +42,7 @@ class Zmienna : public Wyrazenie {
     private:
         char symbol;
     public:
-        Zmienna(char s) : Wyrazenie(3), symbol(s) {if (s < 'a' || s > 'z') throw ZlaNazwaZmiennej();}
+        explicit Zmienna(char s) : Wyrazenie(3), symbol(s) {if (s < 'a' || s > 'z') throw ZlaNazwaZmiennej();}
         string wylicz() override {return "";}
         string wylicz(string wartosci[26]) override {
             int idx = symbol - 'a';
@@ -59,7 +58,7 @@ class OperatorJednoargumentowy : public Wyrazenie {
         Wyrazenie* arg;
     public:
         OperatorJednoargumentowy(Wyrazenie* a, int p = 2) : Wyrazenie(p), arg(a) {}
-        ~OperatorJednoargumentowy() {}
+        ~OperatorJednoargumentowy() override {};
         virtual void wypisz_operator() = 0;
         void wypisz() override {
             wypisz_operator();
@@ -77,6 +76,7 @@ class OperatorDwuargumentowy : public Wyrazenie {
         Wyrazenie* rhs;
     public:
         OperatorDwuargumentowy(Wyrazenie* l, Wyrazenie* r, int p = 1) : Wyrazenie(p), lhs(l), rhs(r) {}
+        ~OperatorDwuargumentowy() override {};
         virtual void wypisz_operator() = 0;
         void wypisz() override {
             if (lhs->get_priorytet() < this->get_priorytet()) {
@@ -97,51 +97,51 @@ class OperatorDwuargumentowy : public Wyrazenie {
 
 class ZamienNaWielkie : public OperatorJednoargumentowy {
     public:
-        ZamienNaWielkie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        explicit ZamienNaWielkie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
         ZamienNaWielkie(const ZamienNaWielkie& z) : OperatorJednoargumentowy(z.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg->wylicz();
-            for (int i = 0; i < wynik.size(); i++) {
+            for (int i = 0; i < (int)wynik.size(); i++) {
                 if (wynik[i] >= 'a' && wynik[i] <= 'z') wynik[i] = wynik[i] - 'a' + 'A';
             }
             return wynik;
         }
         string wylicz(string wartosci[26]) override {
             string wynik = arg->wylicz(wartosci);
-            for (int i = 0; i < wynik.size(); i++) {
+            for (int i = 0; i < (int)wynik.size(); i++) {
                 if (wynik[i] >= 'a' && wynik[i] <= 'z') wynik[i] = wynik[i] - 'a' + 'A';
             }
             return wynik;
         }
-        void wypisz_operator() { cout << "^"; }
+        void wypisz_operator() override { cout << "^"; }
 
         Wyrazenie* kopia() override {return new ZamienNaWielkie(*this);}
 };
 
 class ZamienNaMale : public OperatorJednoargumentowy {
     public:
-        ZamienNaMale(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        explicit ZamienNaMale(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
         ZamienNaMale(const ZamienNaMale& z) : OperatorJednoargumentowy(z.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg->wylicz();
-            for (int i = 0; i < wynik.size(); i++) {
+            for (int i = 0; i < (int)wynik.size(); i++) {
                 if (wynik[i] >= 'A' && wynik[i] <= 'Z') wynik[i] = wynik[i] - 'A' + 'a';
             }
             return wynik;
         }
         string wylicz(string wartosci[26]) override {
             string wynik = arg->wylicz(wartosci);
-            for (int i = 0; i < wynik.size(); i++) {
+            for (int i = 0; i < (int)wynik.size(); i++) {
                 if (wynik[i] >= 'A' && wynik[i] <= 'Z') wynik[i] = wynik[i] - 'A' + 'a';
             }
             return wynik;
         }
-        void wypisz_operator() { cout << "_"; }
+        void wypisz_operator() override { cout << "_"; }
         Wyrazenie* kopia() override {return new ZamienNaMale(*this);}
 };
 class Dlugosc : public OperatorJednoargumentowy {
     public:
-        Dlugosc(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        explicit Dlugosc(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
         Dlugosc(const Dlugosc& d) : OperatorJednoargumentowy(d.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg->wylicz();
@@ -157,10 +157,10 @@ class Dlugosc : public OperatorJednoargumentowy {
 
 class Odwrocenie : public OperatorJednoargumentowy {
     /*
-    Odwraca cały string
+    Odwraca caly string
     */
     public:
-        Odwrocenie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        explicit Odwrocenie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
         Odwrocenie(const Odwrocenie& o) : OperatorJednoargumentowy(o.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg -> wylicz();
@@ -201,7 +201,7 @@ class Maskowanie : public OperatorDwuargumentowy {
             string s2 = rhs->wylicz();
             string wynik = "";
             if (!s2.empty()) {
-                for (int i = 0; i < s1.size(); i++) {
+                for (int i = 0; i < (int)s1.size(); i++) {
                     if (s2[i % s2.size()] == '*') wynik += s1[i];
                 }
             }
@@ -212,7 +212,7 @@ class Maskowanie : public OperatorDwuargumentowy {
             string s2 = rhs->wylicz(wartosci);
             string wynik = "";
             if (!s2.empty()) {
-                for (int i = 0; i < s1.size(); i++) {
+                for (int i = 0; i < (int)s1.size(); i++) {
                     if (s2[i % s2.size()] == '*') wynik += s1[i];
                 }
             }
@@ -232,9 +232,9 @@ class Przeplot : public OperatorDwuargumentowy {
             string wynik = "";
             int i = 0, j = 0;
             bool bierzZLewej = true;
-            while (i < s1.size() || j < s2.size()) {
-                if (bierzZLewej && i < s1.size()) wynik += s1[i++];
-                else if (!bierzZLewej && j < s2.size()) wynik += s2[j++];
+            while (i < (int)s1.size() || j < (int)s2.size()) {
+                if (bierzZLewej && i < (int)s1.size()) wynik += s1[i++];
+                else if (!bierzZLewej && j < (int)s2.size()) wynik += s2[j++];
                 bierzZLewej = !bierzZLewej;
             }
             return wynik;
@@ -245,9 +245,9 @@ class Przeplot : public OperatorDwuargumentowy {
             string wynik = "";
             int i = 0, j = 0;
             bool bierzZLewej = true;
-            while (i < s1.size() || j < s2.size()) {
-                if (bierzZLewej && i < s1.size()) wynik += s1[i++];
-                else if (!bierzZLewej && j < s2.size()) wynik += s2[j++];
+            while (i < (int)s1.size() || j < (int)s2.size()) {
+                if (bierzZLewej && i < (int)s1.size()) wynik += s1[i++];
+                else if (!bierzZLewej && j < (int)s2.size()) wynik += s2[j++];
                 bierzZLewej = !bierzZLewej;
             }
             return wynik;
@@ -258,7 +258,7 @@ class Przeplot : public OperatorDwuargumentowy {
 
 class SklejOgonami : public OperatorDwuargumentowy {
     /*
-    Skleja dwa stringi - pierwszy normalny, drugi odwrócony
+    Skleja dwa stringi - pierwszy normalny, drugi odwrocony
     */
     public:
         SklejOgonami(Wyrazenie* l, Wyrazenie* r) : OperatorDwuargumentowy(l, r) {}
@@ -280,22 +280,18 @@ class SklejOgonami : public OperatorDwuargumentowy {
 };
 
 int main() {
-    // Ustawienia konsoli dla UTF-8 (Windows-specific) - bez tego nie działały mi polskie znaki
-    SetConsoleOutputCP(CP_UTF8);
-
-
-    // Przedstawienie operatorów 
+    // Przedstawienie operatorow 
 
     cout << "Operatory jednoargumentowe:\n" << endl;
     cout << "^ - zamiana liter na wielkie" << endl;
-    cout << "_ - zamiana liter na małe" << endl;
-    cout << "# - liczenie długości napisu" << endl;
-    cout << "< - odwrócenie napisu" << endl;
+    cout << "_ - zamiana liter na male" << endl;
+    cout << "# - liczenie dlugosci napisu" << endl;
+    cout << "< - odwrocenie napisu" << endl;
     cout << "\nOperatory dwuargumentowe:\n" << endl;
-    cout << "& - sklejanie napisów" << endl;
+    cout << "& - sklejanie napisow" << endl;
     cout << "* - maskowanie" << endl;
     cout << "@ - przeplot" << endl;
-    cout << "~ - sklejenie napisów końcami (pierwszy napis tak jak był, drugi doklejony odwrócony)" << endl;
+    cout << "~ - sklejenie napisow koncami (pierwszy napis tak jak byl, drugi doklejony odwrocony)" << endl;
     
     // Testy
 
@@ -309,7 +305,7 @@ int main() {
     wartosci['d' - 'a'] = "is";
     wartosci['e' - 'a'] = "fun";
     
-    cout << "\n\n---TESTY: Stałe i zmienne---\n" << endl;
+    cout << "\n\n---TESTY: Stale i zmienne---\n" << endl;
 
     cout << "Nadawanie wartosciowan zmiennym: " << endl;
     cout << "'a' = " << wartosci['a' - 'a'] << endl;
@@ -349,7 +345,7 @@ int main() {
     Przeplot nestedInterleave(&nestedConcat, &lower);
     Maskowanie nestedMask(&nestedInterleave, &reverse);
 
-    cout << "\n\n---TESTY: Zagnieżdżone operacje---\n" << endl;
+    cout << "\n\n---TESTY: Zagniezdzone operacje---\n" << endl;
     nestedConcat.wypisz(); cout << " = " << nestedConcat.wylicz(wartosci) << endl;
     nestedInterleave.wypisz(); cout << " = " << nestedInterleave.wylicz(wartosci) << endl;
     nestedMask.wypisz(); cout << " = " << nestedMask.wylicz(wartosci) << endl;
@@ -370,7 +366,7 @@ int main() {
     Przeplot interleave2(&s3, &s4);
     SklejOgonami tails2(&z1, &z2);
 
-    cout << "\n\n---TESTY: Złożone operacje ze zmiennymi---\n" << endl;
+    cout << "\n\n---TESTY: Zlozone operacje ze zmiennymi---\n" << endl;
     concat2.wypisz(); cout << " = " << concat2.wylicz(wartosci) << endl;
     mask3.wypisz(); cout << " = " << mask2.wylicz(wartosci) << endl;
     interleave2.wypisz(); cout << " = " << interleave2.wylicz(wartosci) << endl;
@@ -381,7 +377,7 @@ int main() {
     Przeplot complex3(&complex2, &tails2);
     SklejOgonami complex4(&complex3, &reverse2);
 
-    cout << "\n\n---TESTY: Złożone operacje z zagnieżdżeniem---\n" << endl;
+    cout << "\n\n---TESTY: Zlozone operacje z zagniezdzeniem---\n" << endl;
     complex1.wypisz(); cout << " = " << complex1.wylicz(wartosci) << endl;
     complex2.wypisz(); cout << " = " << complex2.wylicz(wartosci) << endl;
     complex3.wypisz(); cout << " = " << complex3.wylicz(wartosci) << endl;
@@ -430,23 +426,23 @@ int main() {
     expr3->wypisz(); cout << " = " << expr3->wylicz(wartosci) << endl;
     delete expr3;
 
-    cout << "\n\n---TESTY: Wyjątki---\n" << endl;
+    cout << "\n\n---TESTY: Wyjatki---\n" << endl;
 
     for (char ch : {'8', '#', '$'}) {
         try {
             Zmienna zInvalid(ch);
-            cout << "BŁĄD !!! " << ch << endl;
+            cout << "BLAD !!! " << ch << endl;
         } catch (const exception& e) {
-            if (string(e.what()) == "Niepoprawna nazwa zmiennej") cout << "Poprawnie wykryto błąd dla zmiennej " << ch << endl;
+            if (string(e.what()) == "Niepoprawna nazwa zmiennej") cout << "Poprawnie wykryto blad dla zmiennej " << ch << endl;
             else cout << "nieok " << e.what() << endl;
         }
     }
 
     try {
-        Zmienna zUnset('f'); // Brak wartości dla zmiennej 'f'
+        Zmienna zUnset('f'); // Brak wartosci dla zmiennej 'f'
         cout << "Zmienna f: " << zUnset.wylicz(wartosci) << endl;
     } catch (const exception& e) {
-        if (string(e.what()) == "Brak wartosci dla zmiennej") cout << "Poprawnie wykryto brak wartościowania dla zmiennej 'f'" << endl;
+        if (string(e.what()) == "Brak wartosci dla zmiennej") cout << "Poprawnie wykryto brak wartosciowania dla zmiennej 'f'" << endl;
         else cout << "nieok " << e.what() << endl;
     }
 
