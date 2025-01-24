@@ -19,6 +19,7 @@ class Wyrazenie {
         int priorytet;
     public:
         Wyrazenie(int p) : priorytet(p) {}
+        Wyrazenie() = delete;
         int get_priorytet() {return priorytet;}
         virtual ~Wyrazenie() = default;
         virtual string wylicz() = 0;
@@ -32,6 +33,8 @@ class Stala : public Wyrazenie {
         string tekst;
     public:
         explicit Stala(string t) : Wyrazenie(3), tekst(t) {}
+        Stala() = delete;
+        ~Stala() override {};
         string wylicz() override {return  tekst;}
         string wylicz(string[26]) override {return tekst;}
         void wypisz() override {cout << "\"" << tekst << "\"";}
@@ -43,6 +46,8 @@ class Zmienna : public Wyrazenie {
         char symbol;
     public:
         explicit Zmienna(char s) : Wyrazenie(3), symbol(s) {if (s < 'a' || s > 'z') throw ZlaNazwaZmiennej();}
+        Zmienna() = delete;
+        ~Zmienna() override {};
         string wylicz() override {return "";}
         string wylicz(string wartosci[26]) override {
             int idx = symbol - 'a';
@@ -58,7 +63,8 @@ class OperatorJednoargumentowy : public Wyrazenie {
         Wyrazenie* arg;
     public:
         OperatorJednoargumentowy(Wyrazenie* a, int p = 2) : Wyrazenie(p), arg(a) {}
-        ~OperatorJednoargumentowy() override {};
+        OperatorJednoargumentowy() = delete;
+        ~OperatorJednoargumentowy() override {delete arg;}
         virtual void wypisz_operator() = 0;
         void wypisz() override {
             wypisz_operator();
@@ -76,7 +82,8 @@ class OperatorDwuargumentowy : public Wyrazenie {
         Wyrazenie* rhs;
     public:
         OperatorDwuargumentowy(Wyrazenie* l, Wyrazenie* r, int p = 1) : Wyrazenie(p), lhs(l), rhs(r) {}
-        ~OperatorDwuargumentowy() override {};
+        OperatorDwuargumentowy() = delete;
+        ~OperatorDwuargumentowy() override {delete lhs; delete rhs;}
         virtual void wypisz_operator() = 0;
         void wypisz() override {
             if (lhs->get_priorytet() < this->get_priorytet()) {
@@ -98,6 +105,8 @@ class OperatorDwuargumentowy : public Wyrazenie {
 class ZamienNaWielkie : public OperatorJednoargumentowy {
     public:
         explicit ZamienNaWielkie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        ZamienNaWielkie() = delete;
+        ~ZamienNaWielkie() override {}
         ZamienNaWielkie(const ZamienNaWielkie& z) : OperatorJednoargumentowy(z.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg->wylicz();
@@ -121,6 +130,8 @@ class ZamienNaWielkie : public OperatorJednoargumentowy {
 class ZamienNaMale : public OperatorJednoargumentowy {
     public:
         explicit ZamienNaMale(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        ZamienNaMale() = delete;
+        ~ZamienNaMale() override {}
         ZamienNaMale(const ZamienNaMale& z) : OperatorJednoargumentowy(z.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg->wylicz();
@@ -142,6 +153,8 @@ class ZamienNaMale : public OperatorJednoargumentowy {
 class Dlugosc : public OperatorJednoargumentowy {
     public:
         explicit Dlugosc(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        Dlugosc() = delete;
+        ~Dlugosc() override {}
         Dlugosc(const Dlugosc& d) : OperatorJednoargumentowy(d.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg->wylicz();
@@ -161,6 +174,8 @@ class Odwrocenie : public OperatorJednoargumentowy {
     */
     public:
         explicit Odwrocenie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
+        Odwrocenie() = delete;
+        ~Odwrocenie() override {}
         Odwrocenie(const Odwrocenie& o) : OperatorJednoargumentowy(o.arg->kopia()) {}
         string wylicz() override {
             string wynik = arg -> wylicz();
@@ -179,6 +194,8 @@ class Odwrocenie : public OperatorJednoargumentowy {
 class Konkatenacja : public OperatorDwuargumentowy {
     public:
         Konkatenacja(Wyrazenie* l, Wyrazenie* r) : OperatorDwuargumentowy(l, r) {}
+        Konkatenacja() = delete;
+        ~Konkatenacja() override {}
         Konkatenacja(const Konkatenacja& k) : OperatorDwuargumentowy(k.lhs->kopia(), k.rhs->kopia()) {}
         string wylicz() override {
             string wynik = lhs->wylicz() + rhs->wylicz();
@@ -195,6 +212,8 @@ class Konkatenacja : public OperatorDwuargumentowy {
 class Maskowanie : public OperatorDwuargumentowy {
     public:
         Maskowanie(Wyrazenie* l, Wyrazenie* r) : OperatorDwuargumentowy(l, r) {}
+        Maskowanie() = delete;
+        ~Maskowanie() override {}
         Maskowanie(const Maskowanie& m) : OperatorDwuargumentowy(m.lhs->kopia(), m.rhs->kopia()) {}
         string wylicz() override {
             string s1 = lhs->wylicz();
@@ -225,6 +244,8 @@ class Maskowanie : public OperatorDwuargumentowy {
 class Przeplot : public OperatorDwuargumentowy {
     public:
         Przeplot(Wyrazenie* l, Wyrazenie* r) : OperatorDwuargumentowy(l, r) {}
+        Przeplot() = delete;
+        ~Przeplot() override {}
         Przeplot(const Przeplot& p) : OperatorDwuargumentowy(p.lhs->kopia(), p.rhs->kopia()) {}
         string wylicz() override {
             string s1 = lhs->wylicz();
@@ -262,6 +283,8 @@ class SklejOgonami : public OperatorDwuargumentowy {
     */
     public:
         SklejOgonami(Wyrazenie* l, Wyrazenie* r) : OperatorDwuargumentowy(l, r) {}
+        SklejOgonami() = delete;
+        ~SklejOgonami() override {}
         SklejOgonami(const SklejOgonami& s) : OperatorDwuargumentowy(s.lhs->kopia(), s.rhs->kopia()) {}
         string wylicz() override {
             string s1 = lhs->wylicz();
