@@ -3,3 +3,7 @@
 *.ilk
 *.pdb
 *.obj
+main.dSYM/
+main
+.DS_Store
+wynik.txt
