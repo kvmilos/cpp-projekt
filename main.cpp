@@ -546,6 +546,7 @@ int main() {
     delete expr3;
     delete expr3copy;
     plik << "\nKoniec testu 1 do pliku.\n";
+    plik.close();
 
     delete upper; delete lower; delete length; delete reverse;
     delete concat; delete mask; delete mask2; delete interleave; delete tails;
