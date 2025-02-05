@@ -22,7 +22,7 @@ class Wyrazenie {
 private:
     int priorytet;
 public:
-    Wyrazenie(int p) : priorytet(p) {}
+    explicit Wyrazenie(int p) : priorytet(p) {}
     Wyrazenie() = delete;
     int get_priorytet() const { return priorytet; }
     virtual ~Wyrazenie() = default;
@@ -39,18 +39,10 @@ public:
     explicit Stala(const string& t) : Wyrazenie(3), tekst(t) {}
     Stala() = delete;
     ~Stala() override = default;
-    string wylicz() override {
-        return tekst;
-    }
-    string wylicz(string[26]) override {
-        return tekst;
-    }
-    void wypisz() override {
-        cout << "\"" << tekst << "\"";
-    }
-    Wyrazenie* kopia() const override {
-        return new Stala(tekst);
-    }
+    string wylicz() override { return tekst; }
+    string wylicz(string[26]) override { return tekst; }
+    void wypisz() override { cout << "\"" << tekst << "\""; }
+    Wyrazenie* kopia() const override { return new Stala(tekst); }
 };
 
 class Zmienna : public Wyrazenie {
@@ -64,9 +56,7 @@ public:
     }
     Zmienna() = delete;
     ~Zmienna() override = default;
-    string wylicz() override {
-        return "";
-    }
+    string wylicz() override { return ""; }
     string wylicz(string wartosci[26]) override {
         int idx = symbol - 'a';
         if (wartosci[idx] == "") {
@@ -74,33 +64,35 @@ public:
         }
         return wartosci[idx];
     }
-    void wypisz() override {
-        cout << symbol;
-    }
-    Wyrazenie* kopia() const override {
-        return new Zmienna(symbol);
-    }
+    void wypisz() override { cout << symbol; }
+    Wyrazenie* kopia() const override { return new Zmienna(symbol); }
 };
 
 class OperatorJednoargumentowy : public Wyrazenie {
 protected:
     Wyrazenie* arg;
 public:
-    OperatorJednoargumentowy(Wyrazenie* a, int p=2)
-        : Wyrazenie(p), arg(a->kopia()) {}
+    OperatorJednoargumentowy(Wyrazenie* a, int p = 2)
+        : Wyrazenie(p), arg(a ? a->kopia() : nullptr) {}
+    OperatorJednoargumentowy(const OperatorJednoargumentowy&) = delete;
+    OperatorJednoargumentowy(OperatorJednoargumentowy&&) = delete;
     OperatorJednoargumentowy() = delete;
-    ~OperatorJednoargumentowy() override {
+    OperatorJednoargumentowy& operator=(const OperatorJednoargumentowy&) = delete;
+    OperatorJednoargumentowy& operator=(OperatorJednoargumentowy&&) = delete;
+    virtual ~OperatorJednoargumentowy() override {
         delete arg;
     }
     virtual void wypisz_operator() = 0;
     void wypisz() override {
         wypisz_operator();
-        if (arg->get_priorytet() < this->get_priorytet()) {
-            cout << "(";
-            arg->wypisz();
-            cout << ")";
-        } else {
-            arg->wypisz();
+        if (arg) {
+            if (arg->get_priorytet() < this->get_priorytet()) {
+                cout << "(";
+                arg->wypisz();
+                cout << ")";
+            } else {
+                arg->wypisz();
+            }
         }
     }
 };
@@ -110,31 +102,37 @@ protected:
     Wyrazenie* lhs;
     Wyrazenie* rhs;
 public:
-    OperatorDwuargumentowy(const Wyrazenie* l, const Wyrazenie* r, int p=1)
-        : Wyrazenie(p), lhs(l->kopia()), rhs(r->kopia()) {}
+    OperatorDwuargumentowy(const Wyrazenie* l, const Wyrazenie* r, int p = 1)
+        : Wyrazenie(p), lhs(l ? l->kopia() : nullptr), rhs(r ? r->kopia() : nullptr) {}
+    OperatorDwuargumentowy(const OperatorDwuargumentowy&) = delete;
     OperatorDwuargumentowy() = delete;
-    ~OperatorDwuargumentowy() override {
+    OperatorDwuargumentowy& operator=(const OperatorDwuargumentowy&) = delete;
+    OperatorDwuargumentowy& operator=(OperatorDwuargumentowy&&) = delete;
+    OperatorDwuargumentowy(OperatorDwuargumentowy&&) = delete;
+    virtual ~OperatorDwuargumentowy() override {
         delete lhs;
         delete rhs;
     }
     virtual void wypisz_operator() = 0;
     void wypisz() override {
-        if (lhs->get_priorytet() < this->get_priorytet()) {
-            cout << "(";
-            lhs->wypisz();
-            cout << ")";
-        } else {
-            lhs->wypisz();
+        if (lhs) {
+            if (lhs->get_priorytet() < this->get_priorytet()) {
+                cout << "(";
+                lhs->wypisz();
+                cout << ")";
+            } else {
+                lhs->wypisz();
+            }
         }
-
         wypisz_operator();
-
-        if (rhs->get_priorytet() < this->get_priorytet()) {
-            cout << "(";
-            rhs->wypisz();
-            cout << ")";
-        } else {
-            rhs->wypisz();
+        if (rhs) {
+            if (rhs->get_priorytet() < this->get_priorytet()) {
+                cout << "(";
+                rhs->wypisz();
+                cout << ")";
+            } else {
+                rhs->wypisz();
+            }
         }
     }
 };
@@ -144,32 +142,26 @@ public:
     explicit ZamienNaWielkie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
     ZamienNaWielkie() = delete;
     ~ZamienNaWielkie() override = default;
-    ZamienNaWielkie(const ZamienNaWielkie& z)
-        : OperatorJednoargumentowy(z.arg->kopia()) {}
+    ZamienNaWielkie(const ZamienNaWielkie& z) = delete;
+    ZamienNaWielkie operator=(const ZamienNaWielkie& z) = delete;
     string wylicz() override {
         string wynik = arg->wylicz();
-        for (int i=0; i<(int)wynik.size(); i++) {
-            if (wynik[i] >= 'a' && wynik[i] <= 'z') {
+        for (int i = 0; i < (int)wynik.size(); i++) {
+            if (wynik[i] >= 'a' && wynik[i] <= 'z')
                 wynik[i] = wynik[i] - 'a' + 'A';
-            }
         }
         return wynik;
     }
     string wylicz(string wartosci[26]) override {
         string wynik = arg->wylicz(wartosci);
-        for (int i=0; i<(int)wynik.size(); i++) {
-            if (wynik[i] >= 'a' && wynik[i] <= 'z') {
+        for (int i = 0; i < (int)wynik.size(); i++) {
+            if (wynik[i] >= 'a' && wynik[i] <= 'z')
                 wynik[i] = wynik[i] - 'a' + 'A';
-            }
         }
         return wynik;
     }
-    void wypisz_operator() override {
-        cout << "^";
-    }
-    Wyrazenie* kopia() const override {
-        return new ZamienNaWielkie(*this);
-    }
+    void wypisz_operator() override { cout << "^"; }
+    Wyrazenie* kopia() const override { return new ZamienNaWielkie(arg->kopia()); }
 };
 
 class ZamienNaMale : public OperatorJednoargumentowy {
@@ -177,33 +169,26 @@ public:
     explicit ZamienNaMale(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
     ZamienNaMale() = delete;
     ~ZamienNaMale() override = default;
-
-    ZamienNaMale(const ZamienNaMale& z)
-        : OperatorJednoargumentowy(z.arg->kopia()) {}
+    ZamienNaMale(const ZamienNaMale& z) = delete;
+    ZamienNaMale operator=(const ZamienNaMale& z) = delete;
     string wylicz() override {
         string wynik = arg->wylicz();
-        for (int i=0; i<(int)wynik.size(); i++) {
-            if (wynik[i] >= 'A' && wynik[i] <= 'Z') {
+        for (int i = 0; i < (int)wynik.size(); i++) {
+            if (wynik[i] >= 'A' && wynik[i] <= 'Z')
                 wynik[i] = wynik[i] - 'A' + 'a';
-            }
         }
         return wynik;
     }
     string wylicz(string wartosci[26]) override {
         string wynik = arg->wylicz(wartosci);
-        for (int i=0; i<(int)wynik.size(); i++) {
-            if (wynik[i] >= 'A' && wynik[i] <= 'Z') {
+        for (int i = 0; i < (int)wynik.size(); i++) {
+            if (wynik[i] >= 'A' && wynik[i] <= 'Z')
                 wynik[i] = wynik[i] - 'A' + 'a';
-            }
         }
         return wynik;
     }
-    void wypisz_operator() override {
-        cout << "_";
-    }
-    Wyrazenie* kopia() const override {
-        return new ZamienNaMale(*this);
-    }
+    void wypisz_operator() override { cout << "_"; }
+    Wyrazenie* kopia() const override { return new ZamienNaMale(arg->kopia()); }
 };
 
 class Dlugosc : public OperatorJednoargumentowy {
@@ -211,9 +196,8 @@ public:
     explicit Dlugosc(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
     Dlugosc() = delete;
     ~Dlugosc() override = default;
-
-    Dlugosc(const Dlugosc& d)
-        : OperatorJednoargumentowy(d.arg->kopia()) {}
+    Dlugosc(const Dlugosc& d) = delete;
+    Dlugosc operator=(const Dlugosc& d) = delete;
     string wylicz() override {
         string wynik = arg->wylicz();
         return to_string(wynik.size());
@@ -222,12 +206,8 @@ public:
         string wynik = arg->wylicz(wartosci);
         return to_string(wynik.size());
     }
-    void wypisz_operator() override {
-        cout << "#";
-    }
-    Wyrazenie* kopia() const override {
-        return new Dlugosc(*this);
-    }
+    void wypisz_operator() override { cout << "#"; }
+    Wyrazenie* kopia() const override { return new Dlugosc(arg->kopia()); }
 };
 
 class Odwrocenie : public OperatorJednoargumentowy {
@@ -235,9 +215,8 @@ public:
     explicit Odwrocenie(Wyrazenie* a) : OperatorJednoargumentowy(a) {}
     Odwrocenie() = delete;
     ~Odwrocenie() override = default;
-
-    Odwrocenie(const Odwrocenie& o)
-        : OperatorJednoargumentowy(o.arg->kopia()) {}
+    Odwrocenie(const Odwrocenie& o) = delete;
+    Odwrocenie operator=(const Odwrocenie& o) = delete;
     string wylicz() override {
         string wynik = arg->wylicz();
         reverse(wynik.begin(), wynik.end());
@@ -248,51 +227,42 @@ public:
         reverse(wynik.begin(), wynik.end());
         return wynik;
     }
-    void wypisz_operator() override {
-        cout << "<";
-    }
-    Wyrazenie* kopia() const override {
-        return new Odwrocenie(*this);
-    }
+    void wypisz_operator() override { cout << "<"; }
+    Wyrazenie* kopia() const override { return new Odwrocenie(arg->kopia()); }
 };
 
 class Konkatenacja : public OperatorDwuargumentowy {
 public:
-    Konkatenacja(const Wyrazenie* l, const Wyrazenie* r) : OperatorDwuargumentowy(l,r) {}
+    Konkatenacja(const Wyrazenie* l, const Wyrazenie* r) : OperatorDwuargumentowy(l, r) {}
     Konkatenacja() = delete;
     ~Konkatenacja() override = default;
-
-    Konkatenacja(const Konkatenacja& k)
-        : OperatorDwuargumentowy(k.lhs->kopia(), k.rhs->kopia()) {}
+    Konkatenacja(const Konkatenacja& k) = delete;
+    Konkatenacja operator=(const Konkatenacja& k) = delete;
     string wylicz() override {
         return lhs->wylicz() + rhs->wylicz();
     }
     string wylicz(string wartosci[26]) override {
         return lhs->wylicz(wartosci) + rhs->wylicz(wartosci);
     }
-    void wypisz_operator() override {
-        cout << " & ";
-    }
-    Wyrazenie* kopia() const override {
-        return new Konkatenacja(*this);
-    }
+    void wypisz_operator() override { cout << " & "; }
+    Wyrazenie* kopia() const override { return new Konkatenacja(lhs, rhs); }
 };
 
 class Maskowanie : public OperatorDwuargumentowy {
 public:
-    Maskowanie(const Wyrazenie* l, const Wyrazenie* r) : OperatorDwuargumentowy(l,r) {}
+    Maskowanie(const Wyrazenie* l, const Wyrazenie* r)
+        : OperatorDwuargumentowy(l, r) {}
     Maskowanie() = delete;
     ~Maskowanie() override = default;
-
-    Maskowanie(const Maskowanie& m)
-        : OperatorDwuargumentowy(m.lhs->kopia(), m.rhs->kopia()) {}
+    Maskowanie(const Maskowanie& m) = delete;
+    Maskowanie operator=(const Maskowanie& m) = delete;
     string wylicz() override {
         string s1 = lhs->wylicz();
         string s2 = rhs->wylicz();
         string wynik;
         if (!s2.empty()) {
-            for (int i=0; i<(int)s1.size(); i++) {
-                if (s2[i % s2.size()] == '*') {
+            for (int i = 0; i < (int)s1.size(); i++) {
+                if (s2[i % (int)s2.size()] == '*') {
                     wynik += s1[i];
                 }
             }
@@ -304,39 +274,37 @@ public:
         string s2 = rhs->wylicz(wartosci);
         string wynik;
         if (!s2.empty()) {
-            for (int i=0; i<(int)s1.size(); i++) {
-                if (s2[i % s2.size()] == '*') {
+            for (int i = 0; i < (int)s1.size(); i++) {
+                if (s2[i % (int)s2.size()] == '*') {
                     wynik += s1[i];
                 }
             }
         }
         return wynik;
     }
-    void wypisz_operator() override {
-        cout << " * ";
-    }
-    Wyrazenie* kopia() const override {
-        return new Maskowanie(*this);
-    }
+    void wypisz_operator() override { cout << " * "; }
+    Wyrazenie* kopia() const override { return new Maskowanie(lhs, rhs); }
 };
 
 class Przeplot : public OperatorDwuargumentowy {
 public:
-    Przeplot(const Wyrazenie* l, const Wyrazenie* r) : OperatorDwuargumentowy(l,r) {}
+    Przeplot(const Wyrazenie* l, const Wyrazenie* r)
+        : OperatorDwuargumentowy(l, r) {}
     Przeplot() = delete;
     ~Przeplot() override = default;
-
-    Przeplot(const Przeplot& p)
-        : OperatorDwuargumentowy(p.lhs->kopia(), p.rhs->kopia()) {}
+    Przeplot(const Przeplot& p) = delete;
+    Przeplot operator=(const Przeplot& p) = delete;
     string wylicz() override {
         string s1 = lhs->wylicz();
         string s2 = rhs->wylicz();
         string wynik;
-        int i=0, j=0;
+        int i = 0, j = 0;
         bool bierzZLewej = true;
-        while (i<(int)s1.size() || j<(int)s2.size()) {
-            if (bierzZLewej && i<(int)s1.size()) wynik += s1[i++];
-            else if (!bierzZLewej && j<(int)s2.size()) wynik += s2[j++];
+        while (i < (int)s1.size() || j < (int)s2.size()) {
+            if (bierzZLewej && i < (int)s1.size())
+                wynik += s1[i++];
+            else if (!bierzZLewej && j < (int)s2.size())
+                wynik += s2[j++];
             bierzZLewej = !bierzZLewej;
         }
         return wynik;
@@ -345,31 +313,29 @@ public:
         string s1 = lhs->wylicz(wartosci);
         string s2 = rhs->wylicz(wartosci);
         string wynik;
-        int i=0, j=0;
+        int i = 0, j = 0;
         bool bierzZLewej = true;
-        while (i<(int)s1.size() || j<(int)s2.size()) {
-            if (bierzZLewej && i<(int)s1.size()) wynik += s1[i++];
-            else if (!bierzZLewej && j<(int)s2.size()) wynik += s2[j++];
+        while (i < (int)s1.size() || j < (int)s2.size()) {
+            if (bierzZLewej && i < (int)s1.size())
+                wynik += s1[i++];
+            else if (!bierzZLewej && j < (int)s2.size())
+                wynik += s2[j++];
             bierzZLewej = !bierzZLewej;
         }
         return wynik;
     }
-    void wypisz_operator() override {
-        cout << " @ ";
-    }
-    Wyrazenie* kopia() const override {
-        return new Przeplot(*this);
-    }
+    void wypisz_operator() override { cout << " @ "; }
+    Wyrazenie* kopia() const override { return new Przeplot(lhs, rhs); }
 };
 
 class SklejOgonami : public OperatorDwuargumentowy {
 public:
-    SklejOgonami(const Wyrazenie* l, const Wyrazenie* r) : OperatorDwuargumentowy(l,r) {}
+    SklejOgonami(const Wyrazenie* l, const Wyrazenie* r)
+        : OperatorDwuargumentowy(l, r) {}
     SklejOgonami() = delete;
     ~SklejOgonami() override = default;
-
-    SklejOgonami(const SklejOgonami& s)
-        : OperatorDwuargumentowy(s.lhs->kopia(), s.rhs->kopia()) {}
+    SklejOgonami(const SklejOgonami& s) = delete;
+    SklejOgonami operator=(const SklejOgonami& s) = delete;
     string wylicz() override {
         string s1 = lhs->wylicz();
         string s2 = rhs->wylicz();
@@ -382,12 +348,8 @@ public:
         reverse(s2.begin(), s2.end());
         return s1 + s2;
     }
-    void wypisz_operator() override {
-        cout << " ~ ";
-    }
-    Wyrazenie* kopia() const override {
-        return new SklejOgonami(*this);
-    }
+    void wypisz_operator() override { cout << " ~ "; }
+    Wyrazenie* kopia() const override { return new SklejOgonami(lhs, rhs); }
 };
 
 int main() {
@@ -402,8 +364,6 @@ int main() {
     cout << "@ - przeplot" << endl;
     cout << "~ - sklejenie napisow koncami (pierwszy napis tak jak byl, drugi doklejony odwrocony)" << endl;
     
-    // Testy
-
     Wyrazenie* s1 = new Stala("Hello");
     Wyrazenie* s2 = new Stala("World");
     Wyrazenie* s3 = new Stala("C++");
@@ -424,10 +384,10 @@ int main() {
     wartosci['e' - 'a'] = "fun";
     
     cout << "\n\n---TESTY: Stale i zmienne---\n" << endl;
-    cout << "Nadawanie wartosciowan zmiennym: " << endl;
+    cout << "Nadawanie wartosci zmiennym: " << endl;
     cout << "'a' = " << wartosci['a' - 'a'] << endl;
     cout << "'b' = " << wartosci['b' - 'a'] << endl;
-    cout << "c' = " << wartosci['c' - 'a'] << endl;
+    cout << "'c' = " << wartosci['c' - 'a'] << endl;
     cout << "'d' = " << wartosci['d' - 'a'] << endl;
     cout << "'e' = " << wartosci['e' - 'a'] << endl << endl;
 
@@ -440,7 +400,7 @@ int main() {
     Wyrazenie* length = new Dlugosc(s3);
     Wyrazenie* reverse = new Odwrocenie(s4);
 
-    cout << "\n\n---TESTY: Operacje jednoargumentowe---\n" << endl;
+    cout << "\n\n---TESTY: Operatory jednoargumentowe---\n" << endl;
     upper->wypisz();   cout << " = " << upper->wylicz() << endl;
     lower->wypisz();   cout << " = " << lower->wylicz() << endl;
     length->wypisz();  cout << " = " << length->wylicz() << endl;
@@ -452,7 +412,7 @@ int main() {
     Wyrazenie* interleave = new Przeplot(s1, s2);
     Wyrazenie* tails = new SklejOgonami(s1, s2);
 
-    cout << "\n\n---TESTY: Operacje dwuargumentowe---\n" << endl;
+    cout << "\n\n---TESTY: Operatory dwuargumentowe---\n" << endl;
     concat->wypisz();    cout << " = " << concat->wylicz() << endl;
     mask->wypisz();      cout << " = " << mask->wylicz() << endl;
     mask2->wypisz();     cout << " = " << mask2->wylicz(wartosci) << endl;
@@ -463,7 +423,7 @@ int main() {
     Wyrazenie* nestedInterleave = new Przeplot(nestedConcat, lower);
     Wyrazenie* nestedMask = new Maskowanie(nestedInterleave, reverse);
 
-    cout << "\n\n---TESTY: Zagniezdzone operacje---\n" << endl;
+    cout << "\n\n---TESTY: Zagniezdzone operatory---\n" << endl;
     nestedConcat->wypisz();      cout << " = " << nestedConcat->wylicz(wartosci) << endl;
     nestedInterleave->wypisz();  cout << " = " << nestedInterleave->wylicz(wartosci) << endl;
     nestedMask->wypisz();        cout << " = " << nestedMask->wylicz(wartosci) << endl;
@@ -473,7 +433,7 @@ int main() {
     Wyrazenie* length2 = new Dlugosc(s5);
     Wyrazenie* reverse2 = new Odwrocenie(s2);
 
-    cout << "\n\n---TESTY: Operacje dwuargumentowe ze zmiennymi---\n" << endl;
+    cout << "\n\n---TESTY: Operatory dwuargumentowe ze zmiennymi---\n" << endl;
     upper2->wypisz();   cout << " = " << upper2->wylicz(wartosci) << endl;
     lower2->wypisz();   cout << " = " << lower2->wylicz(wartosci) << endl;
     length2->wypisz();  cout << " = " << length2->wylicz() << endl;
@@ -486,7 +446,7 @@ int main() {
 
     cout << "\n\n---TESTY: Zlozone operacje ze zmiennymi---\n" << endl;
     concat2->wypisz();     cout << " = " << concat2->wylicz(wartosci) << endl;
-    mask3->wypisz();       cout << " = " << mask2->wylicz(wartosci) << endl;  // oryginalnie: mask2->wylicz(wartosci)
+    mask3->wypisz();       cout << " = " << mask3->wylicz(wartosci) << endl;
     interleave2->wypisz(); cout << " = " << interleave2->wylicz(wartosci) << endl;
     tails2->wypisz();      cout << " = " << tails2->wylicz(wartosci) << endl;
 
@@ -514,23 +474,34 @@ int main() {
                                        new ZamienNaWielkie(
                                            new Stala("Nesting")
                                        ),
-                                       new Stala("Test")))));
-
+                                       new Stala("Test")
+                                   )
+                               )
+                           )
+                         );
     Wyrazenie* expr2 = new ZamienNaWielkie(
                            new Odwrocenie(
                                new Konkatenacja(
                                    new Stala("Kamil"),
-                                   new Zmienna('d'))));
-
+                                   new Zmienna('d')
+                               )
+                           )
+                         );
     Wyrazenie* expr3 = new Odwrocenie(
                            new Konkatenacja(
                                new Dlugosc(
-                                   new Stala("Test")),
+                                   new Stala("Test")
+                               ),
                                new Odwrocenie(
                                    new Przeplot(
                                        new Zmienna('a'),
                                        new Dlugosc(
-                                           new Stala("Test"))))));
+                                           new Stala("Test")
+                                       )
+                                   )
+                               )
+                           )
+                         );
 
     cout << "\n\n---TESTY: Nawiasy---\n" << endl;
     expr->wypisz();  cout << " = " << expr->wylicz() << endl;
@@ -544,7 +515,7 @@ int main() {
     cout << "\n\n---TESTY: Wyjatki---\n" << endl;
     for (char ch : {'8', '#', '$'}) {
         try {
-            Zmienna zInvalid(ch); // to jest lokalny obiekt do testu WYJĄTKU - OK
+            Zmienna zInvalid(ch);
             cout << "BLAD !!! " << ch << endl;
         }
         catch (const exception& e) {
@@ -554,7 +525,6 @@ int main() {
                 cout << "nieok " << e.what() << endl;
         }
     }
-
     try {
         Zmienna zUnset('f'); // Brak wartosci dla zmiennej 'f'
         cout << "Zmienna f: " << zUnset.wylicz(wartosci) << endl;
@@ -568,30 +538,87 @@ int main() {
 
     ofstream plik("wynik.txt");
     plik << "Przykladowe testy wyrazen (zapis do pliku):\n\n";
-
-    plik << "[Wywolanie na s1 (Hello)]\n"
-         << "s1->wylicz() = " << s1->wylicz() << "\n\n";
-
+    plik << "[Wywolanie na s1 (Hello)]\n" << "s1->wylicz() = " << s1->wylicz() << "\n\n";
     plik << "[Wywolanie na expr3 (zlozone wyrazenie)]\n";
     plik << "expr3->wylicz(wartosci) = " << expr3->wylicz(wartosci) << "\n";
     Wyrazenie* expr3copy = expr3->kopia();
-
     plik << "expr3copy->wylicz(wartosci) = " << expr3copy->wylicz(wartosci) << "\n";
     delete expr3;
     delete expr3copy;
+    plik << "\nKoniec testu 1 do pliku.\n";
 
-    plik << "\nKoniec testu do pliku.\n";
-
-    delete upper;      delete lower;      delete length;      delete reverse;
-    delete concat;     delete mask;       delete mask2;       delete interleave;
-    delete tails;      delete nestedConcat;     delete nestedInterleave;  
-    delete nestedMask; delete upper2;     delete lower2;      delete length2;
-    delete reverse2;   delete concat2;    delete mask3;       delete interleave2;
-    delete tails2;     delete complex1;   delete complex2;    delete complex3;
-    delete complex4;   delete zW;         delete odwr;        delete konkat;
-
+    delete upper; delete lower; delete length; delete reverse;
+    delete concat; delete mask; delete mask2; delete interleave; delete tails;
+    delete nestedConcat; delete nestedInterleave; delete nestedMask;
+    delete upper2; delete lower2; delete length2; delete reverse2;
+    delete concat2; delete mask3; delete interleave2; delete tails2;
+    delete complex1; delete complex2; delete complex3; delete complex4;
+    delete zW; delete odwr; delete konkat;
     delete s1; delete s2; delete s3; delete s4; delete s5; delete s6;
     delete z1; delete z2; delete z3; delete z4; delete z5;
 
-    return 0;
+    for (int i = 0; i < 26; i++) {
+        wartosci[i] = "";
+    }
+    wartosci['b' - 'a'] = "C+o yhn hsi h usin";
+    wartosci['x' - 'a'] = "+ rPto?Ti steqeto!";
+
+    // Test 1: Wyrażenie "b @ x"
+    Wyrazenie* test1 = new Przeplot(new Zmienna('b'), new Zmienna('x'));
+    cout << "test dla b@x z wartosciowaniem" << endl;
+    cout << " - wynik z wartosciowaniem: \"" << test1->wylicz(wartosci) << "\"" << endl;
+    cout << " - wynik bez wartosciowania: \"" << test1->wylicz() << "\"" << endl;
+    delete test1;
+
+    // Test 2: Wyrażenie "b @ x * \"***                                     \""
+    Wyrazenie* test2 = new Maskowanie(
+        new Przeplot(new Zmienna('b'), new Zmienna('x')),
+        new Stala("***                                     ")
+    );
+    cout << "\ntest dla b@x*\"***\"" << endl;
+    cout << " - wynik z wartosciowaniem: \"" << test2->wylicz(wartosci) << "\"" << endl;
+    cout << " - wynik bez wartosciowania: \"" << test2->wylicz() << "\"" << endl;
+    delete test2;
+
+    // Test 3: Wyrażenie "b @ x * \".......******\""
+    Wyrazenie* test3 = new Maskowanie(
+        new Przeplot(new Zmienna('b'), new Zmienna('x')),
+        new Stala(".......******                ")
+    );
+    cout << "\ntest dla b@x*\".......******                \"" << endl;
+    cout << " - wynik z wartosciowaniem: \"" << test3->wylicz(wartosci) << "\"" << endl;
+    cout << " - wynik bez wartosciowania: \"" << test3->wylicz() << "\"" << endl;
+    delete test3; 
+
+    // Test 4: Wyrażenie "_(b @ x * \".......******                \") ^ \"..\" & ^(b @ x * \"***                                     \")"
+    Wyrazenie* test4 =
+    new Konkatenacja(
+        new ZamienNaMale(
+            new Maskowanie(
+                new Przeplot(
+                    new Zmienna('b'),
+                    new Zmienna('x')
+                ),
+                new Stala(".......******                ")
+            )
+        ), 
+        new Konkatenacja(
+            new Dlugosc(new Stala("..")),
+            new ZamienNaWielkie(
+                new Maskowanie(
+                    new Przeplot(
+                        new Zmienna('b'),
+                        new Zmienna('x')
+                    ),
+                    new Stala("***                                     ")
+                )
+            )
+        )
+    );
+
+    cout << "\ntest dla _(b@x*\".......******                \")&#\"..\"&^(b@x*\"***                                     \")" << endl;
+    cout << " - wynik z wartosciowaniem: \"" << test4->wylicz(wartosci) << "\"" << endl;
+    cout << " - wynik bez wartosciowania: \"" << test4->wylicz() << "\"" << endl;
+    cout << "\nINACZEJ NIZ W PRZYKLADZIE!!! Ale moim zdaniem to w przykladzie jest blad" << endl;
+    delete test4;
 }
